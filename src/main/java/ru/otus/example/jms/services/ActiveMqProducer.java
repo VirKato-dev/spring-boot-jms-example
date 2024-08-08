@@ -10,6 +10,7 @@ import org.springframework.jms.core.MessageCreator;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.otus.example.jms.config.RabbitMqConfig;
+import ru.otus.example.jms.dto.MessageDto;
 import ru.otus.example.jms.dto.OrderDto;
 import ru.otus.example.jms.dto.StudentDto;
 
@@ -17,10 +18,11 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 @Slf4j
 @Service
-public class RabbitMqProducer {
+public class ActiveMqProducer {
 
     private static final int TEXT = 0;
     private static final int SERIALIZABLE = 1;
@@ -30,10 +32,24 @@ public class RabbitMqProducer {
     private final Random random = new Random();
     private final ObjectMapper objectMapper;
 
-    public RabbitMqProducer(@Qualifier(RabbitMqConfig.JMS_TEMPLATE_RABBIT) JmsTemplate jmsTemplate,
+    public ActiveMqProducer(@Qualifier(RabbitMqConfig.JMS_TEMPLATE_ACTIVE) JmsTemplate jmsTemplate,
                             ObjectMapper objectMapper) {
         this.jmsTemplate = jmsTemplate;
         this.objectMapper = objectMapper;
+    }
+
+    public void sendMessage(MessageDto message) {
+        MessageCreator messageCreator = session -> {
+            try {
+                ObjectMessage objectMessage = session.createObjectMessage();
+                objectMessage.setStringProperty(RabbitMqConfig.CLASS_NAME, MessageDto.class.getName());
+                objectMessage.setObject(objectMapper.writeValueAsString(message));
+                return objectMessage;
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        };
+        jmsTemplate.send(RabbitMqConfig.EXCHANGE_NAME, messageCreator);
     }
 
     @Scheduled(fixedRate = 5000)
@@ -64,26 +80,45 @@ public class RabbitMqProducer {
         String lastName = "pavlov_" + id;
 
         return StudentDto.builder()
-                         .firstName(firstName)
-                         .lastName(lastName)
-                         .email(firstName + '.' + lastName + "@yandex.ru")
-                         .counts(List.of(1, 2, 3))
-                         .dateOfBirth(LocalDate.now())
-                         .build();
+                .firstName(firstName)
+                .lastName(lastName)
+                .email(firstName + '.' + lastName + "@yandex.ru")
+                .counts(List.of(1, 2, 3))
+                .dateOfBirth(LocalDate.now())
+                .build();
     }
 
     private MessageCreator createMessageCreatorMessage() {
         int id = random.nextInt(10);
         OrderDto order = OrderDto.builder()
-                                 .title("auto_" + id)
-                                 .value(id * id)
-                                 .build();
+                .title("auto_" + id)
+                .value(id * id)
+                .build();
 
         return session -> {
             try {
                 ObjectMessage objectMessage = session.createObjectMessage();
                 objectMessage.setStringProperty(RabbitMqConfig.CLASS_NAME, OrderDto.class.getName());
                 objectMessage.setObject(objectMapper.writeValueAsString(order));
+                return objectMessage;
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    private MessageCreator createMessageCreatorMyMessage() {
+        int id = random.nextInt(10);
+        MessageDto message = MessageDto.builder()
+                .uuid(UUID.randomUUID())
+                .text("text_" + id)
+                .build();
+
+        return session -> {
+            try {
+                ObjectMessage objectMessage = session.createObjectMessage();
+                objectMessage.setStringProperty(RabbitMqConfig.CLASS_NAME, MessageDto.class.getName());
+                objectMessage.setObject(objectMapper.writeValueAsString(message));
                 return objectMessage;
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);

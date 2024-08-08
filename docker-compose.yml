@@ -1,0 +1,32 @@
+version: "2"
+services:
+  jms-rabbit:
+    image: bitnami/rabbitmq
+    container_name: rabbitmq
+    ports:
+      - "15672:15672" ## UI
+      - "5672:5672" ## broker
+    volumes:
+      - "jms_rabbit_data:/bitnami"
+    environment:
+      RABBITMQ_USERNAME: user
+      RABBITMQ_PASSWORD: pass
+      RABBITMQ_MANAGEMENT_ALLOW_WEB_ACCESS: true
+
+  jms-active:
+    image: apache/activemq-artemis
+    container_name: activemq
+    ports:
+      - "8161:8161" ## UI
+      - "61616:61616" ## broker
+    volumes:
+      - "jms_active_data:/var/lib/artemis-instance"
+    environment:
+      ARTEMIS_USER: user
+      ARTEMIS_PASSWORD: pass
+
+volumes:
+  jms_rabbit_data:
+    driver: local
+  jms_active_data:
+    driver: local

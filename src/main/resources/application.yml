@@ -1,0 +1,16 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+
+
+
+jms:
+  active-host: "tcp://0.0.0.0"
+  active-broker: "61616"
+  rabbit-host: "localhost"
+  rabbit-broker: "5672"
+  user: "user"
+  password: "pass"

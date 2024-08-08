@@ -15,12 +15,12 @@ import java.io.Serializable;
 
 @Service
 @RequiredArgsConstructor
-public class RabbitMqListener {
+public class ActiveMqListener {
 
     private final ObjectMapper objectMapper;
 
-    @JmsListener(destination = RabbitMqConfig.QUEUE_NAME
-            , containerFactory = RabbitMqConfig.JMS_LISTENER_CONTAINER_FACTORY_RABBIT)
+    @JmsListener(destination = RabbitMqConfig.QUEUE_NAME,
+            containerFactory = RabbitMqConfig.JMS_LISTENER_CONTAINER_FACTORY_ACTIVE)
     public void onMessage(Message message) {
         try {
             if (message instanceof TextMessage)
@@ -38,7 +38,7 @@ public class RabbitMqListener {
 
     private static void onTextMessage(TextMessage message) throws JMSException {
         String msg = message.getText();
-        System.out.format("[rabbit-mq: text] : %s\n", msg);
+        System.out.format("[active-mq: text] : %s\n", msg);
     }
 
     private void onObjectMessage(ObjectMessage message)
@@ -53,13 +53,13 @@ public class RabbitMqListener {
 
     private static void onSerializableObjectMessage(ObjectMessage message) throws JMSException {
         Serializable obj = message.getObject();
-        System.out.format("[rabbit-mq: serializable] : %s\n", obj);
+        System.out.format("[active-mq: serializable] : %s\n", obj);
     }
 
     private void onCustomObjectMessage(Class<?> cls, ObjectMessage message)
             throws JMSException, JsonProcessingException {
         String json = String.valueOf(message.getObject());
         Object obj = objectMapper.readValue(json, cls);
-        System.out.format("[rabbit-mq: %s] : %s\n", cls.getSimpleName(), obj);
+        System.out.format("[active-mq: %s] : %s\n", cls.getSimpleName(), obj);
     }
 }
